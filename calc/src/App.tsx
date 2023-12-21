@@ -1,5 +1,6 @@
-import { For, batch, createEffect } from 'solid-js'
+import { For, batch} from 'solid-js'
 import { createStore } from "solid-js/store";
+import "./index.css"
 
 type RowData = {
   Add: {
@@ -19,15 +20,16 @@ function App() {
     Sub: [] as RowData["Sub"]
   })
 
-  const beforeVal: RowData["Add"] = []
-
   return (
     <>
       <nav>
 
       </nav>
       <main>
-      <form id="add" onSubmit={(event) => {
+      <form 
+          id="add"
+          class='form-control'
+          onSubmit={(event) => {
           event.preventDefault()
           batch(() => {
             const formDatus = new FormData(
@@ -38,23 +40,90 @@ function App() {
               name: formDatus.get("name") as string,
               price:formDatus.get("price") as string
             }
-            store.Add.forEach((data) => {
-              beforeVal.push(data)
-            })
-            setStore({Add: [...beforeVal,{
-              name: resultVal.name,
-              price: Number(resultVal.price)
-            }]})
+            if(formDatus.get("select") as string === "Add"){
+              setStore({Sub: [...store.Sub,{
+                name: resultVal.name,
+                price: Number(resultVal.price)
+              }]})
+            }else {
+              setStore({Add: [...store.Add,{
+                name: resultVal.name,
+                price: Number(resultVal.price)
+              }]})
+            }
+            
           })
-          console.log(store.Add)
         }}>
-          <input type="text" name="name" />
-          <input type="number" name='price' />
-          <input type='submit' value="submit" />
+          <div class='grid grid-cols-3 max-x-md'>
+            <div>
+              <label class='label'><span class='label-text'>Input Name</span></label>
+              <input type="text" class='input w-full max-w-xs' name="name" />
+            </div>
+            <div>
+              <label class='label'><span class='label-text'>Input Price</span></label>
+              <input type="number" class='input w-full max-w-xs' name='price' />
+            </div>
+            <div class='pt-9'>
+              <select name="select" class='select select-bordered w-full max-w-xs'>
+                <option disabled selected>Select Add or Sub</option>
+                <option value="Add">Add</option>
+                <option value="Sub">Sub</option>
+              </select>
+            </div>
+          </div>        
+          
+          <input type='submit' class='btn' value="submit" />
         </form>
-        <For each={store.Add}>
-          {(data) => <p>{data.name}</p>}
-        </For> 
+        <div class='flex flex-row'>
+          <div class='basis-1/2'>
+          <h3 class='text-xl'>Add</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Name</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+              <For each={store.Add}>
+                {(data,index) => 
+                <tr>
+                  <th>{index() + 1}</th>
+                  <td>{data.name}</td>
+                  <td>{data.price}</td>
+                </tr>
+                }
+              </For> 
+              </tbody>
+            </table>
+            
+          </div>
+          <div class='basis-1/2'>
+            <h3 class='text-xl'>Sub</h3>
+          <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Name</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+              <For each={store.Sub}>
+                {(data,index) => 
+                <tr>
+                  <th>{index() + 1}</th>
+                  <td>{data.name}</td>
+                  <td>{data.price}</td>
+                </tr>
+                }
+              </For> 
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
         
       </main>
     </>
