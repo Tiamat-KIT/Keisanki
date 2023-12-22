@@ -1,6 +1,11 @@
-
-import {useState} from "react"
+import {useStorage} from "@plasmohq/storage/hook"
+import { Storage } from "@plasmohq/storage"
 import "./index.css"
+import { useCallback, useMemo } from "react"
+
+const strage = new Storage(
+  {area: "local"}
+)
 
 interface ForDefaultType {
   name: string,
@@ -14,29 +19,50 @@ type RowData = {
 }
 
 function App() {
-  const [store,setStore] = useState<RowData>({
-    Add: [] as unknown as ForDefaultType[],
-    Sub: [] as unknown as ForDefaultType[]
-  })
 
- 
+  const [StrageDatus, setStrageDatus] = useStorage<RowData>("RowData", (data) => {
+    return data === undefined ? {
+      Add: [] as unknown as ForDefaultType[],
+      Sub: [] as unknown as ForDefaultType[]
+    } : data
+    })
 
-  function For({each}:{each: ForDefaultType[]}){
-      return (
+
+  function For({each,text}:{each: ForDefaultType[],text: string}){
+    const Comp = useCallback(() => {
+      return(
         <>
         {each.map((data,index) => {
           return (
-            <tr>
+            <tr key={index} id={`${text}-${index}`}>
               <th>{index + 1}</th>
               <td>{data.name}</td>
               <td>{data.price}</td>
+              <td><button className='btn btn-error' onClick={() => {
+                if(text === "add"){
+                  StrageDatus.Add.splice(index,1)
+                  setStrageDatus({Add: [...StrageDatus.Add],Sub: [...StrageDatus.Sub]})
+              }else{
+                StrageDatus.Sub.splice(index,1)
+                setStrageDatus({Add: [...StrageDatus.Add],Sub: [...StrageDatus.Sub]})
+              }
+              } }>Del</button></td>
             </tr>
           )
         })}
         </>
       )
+    },[StrageDatus])
+      return Comp()
     }
 
+    const Result = useMemo(() => {
+      return StrageDatus.Add.reduce((acc,cur) => {
+        return acc + cur.price
+      },0) - StrageDatus.Sub.reduce((acc,cur) => {
+        return acc + cur.price
+      },0)
+    },[StrageDatus])
   return (
     <>
       <nav>
@@ -57,15 +83,15 @@ function App() {
               price:formDatus.get("price") as string
             }
             if(formDatus.get("select") as string === "Add"){
-              setStore({Add: [...store.Add,{
+              setStrageDatus({Add: [...StrageDatus.Add,{
                 name: resultVal.name,
                 price: Number(resultVal.price)
-              }],Sub: [...store.Sub]})
+              }],Sub: [...StrageDatus.Sub]})
             }else {
-              setStore(
+              setStrageDatus(
                 {
-                  Add:[...store.Add],
-                  Sub: [...store.Sub,{
+                  Add:[...StrageDatus.Add],
+                  Sub: [...StrageDatus.Sub,{
                     name: resultVal.name,
                     price: Number(resultVal.price)
                   }]
@@ -83,8 +109,8 @@ function App() {
               <input type="number" className='input w-full max-w-xs' name='price' />
             </div>
             <div className='pt-9'>
-              <select name="select" className='select select-bordered w-full max-w-xs'>
-                <option disabled selected>Select Add or Sub</option>
+              <select name="select" defaultValue="default" className='select select-bordered w-full max-w-xs'>
+                <option disabled value="default">Select Add or Sub</option>
                 <option value="Add">Add</option>
                 <option value="Sub">Sub</option>
               </select>
@@ -102,10 +128,11 @@ function App() {
                   <th></th>
                   <th>Name</th>
                   <th>Price</th>
+                  <th>Del</th>
                 </tr>
               </thead>
               <tbody>
-              <For each={store.Add} />
+              <For each={StrageDatus.Add} text="add"/>
               </tbody>
             </table>
             
@@ -118,14 +145,16 @@ function App() {
                   <th></th>
                   <th>Name</th>
                   <th>Price</th>
+                  <th>Del</th>
                 </tr>
               </thead>
               <tbody>
-              <For each={store.Sub} />
+              <For each={StrageDatus.Sub} text="sub"/>
               </tbody>
             </table>
           </div>
         </div>
+        <h2 className='text-2xl'>Result:{Result}</h2>
       </main>
     </>
   )
